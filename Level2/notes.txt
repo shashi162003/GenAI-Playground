@@ -1,0 +1,8 @@
+Additional Prompting Techniques:
+
+Self-Consitency Prompting:
+    The model generates multiple responses and selects the most consistent or common answer.
+
+Persona-based Prompting:
+    The model is instructed to respond as if it were a particular character or person.
+    - Needs exhaustive System Prompting
