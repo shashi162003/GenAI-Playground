@@ -30,19 +30,21 @@ async function gitGithubInfoByUsername(username = '') {
 }
 
 async function executeCommand(command = '') {
-    return new Promise((resolve, reject) => {
-        exec(command, (error, data) => {
-            if (error) {
-                reject(`Error: ${error.message}`);
-            } else {
-                if (data && data.trim().length > 0) {
-                    resolve(`Command executed successfully: ${data.trim()}`);
+    try{
+        return await new Promise((resolve, reject) => {
+            exec(command, (error, data) => {
+                if (error) {
+                    reject(`Error: ${error.message}`);
+                } else if (data) {
+                    resolve(`Command Output: ${data}`);
                 } else {
-                    resolve('Command executed successfully (no output)');
+                    resolve('No output from command.');
                 }
-            }
+            });
         });
-    });
+    } catch (err) {
+        return `Error: ${err.message}`;
+    }
 }
 
 const TOOL_MAP = {
@@ -101,19 +103,29 @@ async function main() {
         },
         {
             role: 'user',
-            // content: 'What is the weather of Delhi, Mumbai, Kolkata and Chennai? Also tell me the average weather of all the cities in India.',
-            // content: 'Can you provide detailed information about the GitHub user "shashi162003"?'
-            content: 'Hey, create a folder todo_app and create a simple todo app using html, css and javascript.'
-        }
+            content: 'track all the changes using git and list the modified files and push to github.',
+        },
     ];
 
     while (true) {
         const response = await client.chat.completions.create({
-            model: 'gpt-4.1-mini',
+            model: 'gpt-4.1',
             messages: messages,
         });
         const rawContent = response.choices[0].message.content;
-        const parsedContent = JSON.parse(rawContent);
+        let parsedContent = null;
+        try {
+            const match = rawContent.match(/\{[\s\S]*?\}/);
+            if (match) {
+                parsedContent = JSON.parse(match[0]);
+            } else {
+                throw new Error('No valid JSON object found in model output.');
+            }
+        } catch (err) {
+            console.error('Failed to parse model output as JSON:', err.message);
+            console.error('Raw output:', rawContent);
+            break;
+        }
 
         if (parsedContent.step === 'START') {
             console.log(`Beginning: ${parsedContent.content}`);
